@@ -67,8 +67,8 @@ class LansknetAPI:
         response = self.__post("/api/campaign/company/" + str(company_id))
         if response.status_code == 200:
             campaigns = []
-            if response.text.startswith("{\"message\": \"No campaigns yet.\"}\n"):
-                return CampaignResponse()
+            if not response.json():
+                return campaigns
             for campaign in response.json()["campaigns"]:
                 campaigns.append(CampaignResponse(
                     int(campaign["clicked"]),
@@ -110,7 +110,7 @@ class LansknetAPI:
         response = self.__post("/api/employees", data)
         if response.status_code == 200:
             employees = []
-            for employee in response.json()["users"]:
+            for employee in response.json()["employees"]:
                 employees.append(EmployeeResponse(
                     employee["email"],
                     employee["first_name"],
