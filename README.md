@@ -17,7 +17,7 @@ To use the wrapper, you must first import it:
 ```python
 from LansknetAPI import LansknetAPI
 
-api = LansknetAPI("https://api-lansknet.me", "email", "password")
+api = LansknetAPI("https://api-lansknet.me", "api_key")
 
 print(api.get_all_company_campaigns(1))
 print(api.get_all_service_campaigns(1, 1))

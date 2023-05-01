@@ -35,10 +35,9 @@ class HTMLError:
 
 
 class LansknetAPI:
-    def __init__(self, base_url, username, password):
+    def __init__(self, base_url, username):
         self.base_url = base_url
         self.username = username
-        self.password = password
         self.auth_header = \
             {
                 "Authorization": self.__get_jwt_token(),
@@ -46,7 +45,7 @@ class LansknetAPI:
             }
 
     def __get_jwt_token(self):
-        auth = self.username + ":" + self.password
+        auth = self.username + ":sssss"
         auth = base64.b64encode(auth.encode("ascii"))
         response = self.__post("/api/login", None, {"Authorization": "Basic " + auth.decode("ascii")})
         if response.status_code == 200:
@@ -72,7 +71,7 @@ class LansknetAPI:
             for campaign in response.json()["campaigns"]:
                 campaigns.append(CampaignResponse(
                     int(campaign["clicked"]),
-                    datetime.strptime(campaign["created_date"][:-11], "%Y-%m-%dT%H:%M:%S"),
+                    datetime.strptime(campaign["created_date"][:-1], "%Y-%m-%dT%H:%M:%S"),
                     campaign["name"],
                     int(campaign["opened"]),
                     int(campaign["sent"]),
@@ -91,7 +90,7 @@ class LansknetAPI:
             for campaign in response.json()["campaigns"]:
                 campaigns.append(CampaignResponse(
                     int(campaign["clicked"]),
-                    datetime.strptime(campaign["created_date"][:-11], "%Y-%m-%dT%H:%M:%S"),
+                    datetime.strptime(campaign["created_date"][:-1], "%Y-%m-%dT%H:%M:%S"),
                     campaign["name"],
                     int(campaign["opened"]),
                     int(campaign["sent"]),
