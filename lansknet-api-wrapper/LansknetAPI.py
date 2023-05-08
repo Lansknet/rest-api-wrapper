@@ -132,3 +132,11 @@ class LansknetAPI:
                 ))
             return services
         return HTMLError(response.reason, response.status_code)
+
+    # Create a new campaign.
+    def create_campaign(self, campaign_name, service_id, email_template):
+        response = self.__post("/ai/launch_campaign", params={"campaignName": campaign_name, "serviceId": service_id,
+                                                              "emailTemplate": email_template})
+        if response.status_code == 200:
+            return "Ok"
+        return HTMLError(response.reason, response.status_code)
