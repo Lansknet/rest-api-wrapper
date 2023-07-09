@@ -39,17 +39,21 @@ class LansknetAPI:
     def __init__(self, base_url, username):
         self.base_url = base_url
         self.username = username
+        self.is_logged_in = False
         self.auth_header = {
             "Authorization": self.__get_jwt_token(),
             "Content-Type": "application/json"
         }
+
+    def is_logged(self):
+        return self.is_logged_in
 
     def __get_jwt_token(self):
         auth = self.username + ":sssss"
         auth = base64.b64encode(auth.encode("ascii"))
         response = self.___post("/api/login", None, {"Authorization": "Basic " + auth.decode("ascii")})
         if response.status_code == 200:
-            print(response.json())
+            self.is_logged_in = True
             b64 = base64.b64encode(str(response.json()["token"]).encode("ascii") + b":")
             return "Basic " + b64.decode("ascii")
         return {}
@@ -92,16 +96,20 @@ class LansknetAPI:
             return HTMLError("Error", 500)
 
     async def get_all_company_campaigns(self, company_id):
+        assert isinstance(company_id, int)
         path = "/api/campaign/company/" + str(company_id)
         return await self.__fetch_campaigns(path)
 
     async def get_all_service_campaigns(self, company_id, service_id):
+        assert isinstance(company_id, int)
+        assert isinstance(service_id, int)
         path = "/api/campaign/service/" + str(service_id)
         params = {"companyId": company_id}
         return await self.__fetch_campaigns(path, params)
 
     async def get_all_employees(self, company_id, service_id=None):
         try:
+            assert isinstance(company_id, int)
             path = "/api/employees"
             data = {"companyId": company_id}
             if service_id is not None:
@@ -123,6 +131,7 @@ class LansknetAPI:
 
     async def get_all_services(self, company_id):
         try:
+            assert isinstance(company_id, int)
             path = "/api/services"
             params = {"companyId": company_id}
             response = await self.__post(path, params)
