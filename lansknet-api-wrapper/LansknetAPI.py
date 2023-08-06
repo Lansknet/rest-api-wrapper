@@ -1,4 +1,3 @@
-import aiohttp
 import requests
 import base64
 from dataclasses import dataclass
@@ -30,6 +29,12 @@ class ServiceResponse:
 
 
 @dataclass
+class Company:
+    id: int = -1
+    name: str = ""
+
+
+@dataclass
 class HTMLError:
     reason: str
     status_code: int
@@ -40,122 +45,121 @@ class LansknetAPI:
         self.base_url = base_url
         self.username = username
         self.is_logged_in = False
-        self.auth_header = {
-            "Authorization": self.__get_jwt_token(),
-            "Content-Type": "application/json"
-        }
-
-    def is_logged(self):
-        return self.is_logged_in
+        self.auth_header = \
+            {
+                "Authorization": self.__get_jwt_token(),
+                "Content-Type": "application/json"
+            }
 
     def __get_jwt_token(self):
         auth = self.username + ":sssss"
         auth = base64.b64encode(auth.encode("ascii"))
-        response = self.___post("/api/login", None, {"Authorization": "Basic " + auth.decode("ascii")})
+        response = self.__post("/api/login", None, {"Authorization": "Basic " + auth.decode("ascii")})
         if response.status_code == 200:
-            self.is_logged_in = True
             b64 = base64.b64encode(str(response.json()["token"]).encode("ascii") + b":")
             return "Basic " + b64.decode("ascii")
         return {}
 
-    def ___post(self, path, params=None, headers=None):
+    def __post(self, path, params=None, headers=None):
         url = self.base_url + path
         if headers is None:
             headers = self.auth_header
         return requests.post(url, json=params, headers=headers)
 
-    async def __post(self, path, params=None, headers=None):
-        url = self.base_url + path
-        if headers is None:
-            headers = self.auth_header
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, json=params, headers=headers) as response:
-                return response
-
-    async def __fetch_campaigns(self, path, params=None):
-        try:
-            response = await self.__post(path, params)
-            if response.status == 200:
-                campaigns = []
-                json_data = await response.json()
-                if not json_data:
-                    return campaigns
-                for campaign in json_data["campaigns"]:
-                    campaigns.append(CampaignResponse(
-                        int(campaign["clicked"]),
-                        datetime.strptime(campaign["created_date"][:-1], "%Y-%m-%dT%H:%M:%S"),
-                        campaign["name"],
-                        int(campaign["opened"]),
-                        int(campaign["sent"]),
-                        int(campaign["service_id"]),
-                        int(campaign["submitted_data"])
-                    ))
+    # List all campaigns of specific company.
+    # Required query parameter: companyId: id
+    def get_all_company_campaigns(self, company_id):
+        response = self.__post("/api/campaign/company/" + str(company_id))
+        if response.status_code == 200:
+            campaigns = []
+            if not response.json():
                 return campaigns
-            return HTMLError(response.reason, response.status)
-        except Exception as e:
-            return HTMLError("Error", 500)
+            for campaign in response.json()["campaigns"]:
+                campaigns.append(CampaignResponse(
+                    int(campaign["clicked"]),
+                    datetime.strptime(campaign["created_date"][:-1], "%Y-%m-%dT%H:%M:%S"),
+                    campaign["name"],
+                    int(campaign["opened"]),
+                    int(campaign["sent"]),
+                    int(campaign["service_id"]),
+                    int(campaign["submitted_data"])
+                ))
+            return campaigns
+        return HTMLError(response.reason, response.status_code)
 
-    async def get_all_company_campaigns(self, company_id):
-        assert isinstance(company_id, int)
-        path = "/api/campaign/company/" + str(company_id)
-        return await self.__fetch_campaigns(path)
+    # List all campaigns of specific company and service within.
+    # Required query parameter: companyId: id, serviceId: int
+    def get_all_service_campaigns(self, company_id, service_id):
+        response = self.__post("/api/campaign/service/" + str(service_id), params={"companyId": company_id})
+        if response.status_code == 200:
+            campaigns = []
+            for campaign in response.json()["campaigns"]:
+                campaigns.append(CampaignResponse(
+                    int(campaign["clicked"]),
+                    datetime.strptime(campaign["created_date"][:-1], "%Y-%m-%dT%H:%M:%S"),
+                    campaign["name"],
+                    int(campaign["opened"]),
+                    int(campaign["sent"]),
+                    service_id,
+                    int(campaign["submitted_data"])
+                ))
+            return campaigns
+        return HTMLError(response.reason, response.status_code)
 
-    async def get_all_service_campaigns(self, company_id, service_id):
-        assert isinstance(company_id, int)
-        assert isinstance(service_id, int)
-        path = "/api/campaign/service/" + str(service_id)
-        params = {"companyId": company_id}
-        return await self.__fetch_campaigns(path, params)
+    # List all employees of specific company, and if asked, of specific service within.
+    # Required query parameter: companyId: id. Optional: serviceId: int
+    def get_all_employees(self, company_id, service_id=None):
+        data = {"companyId": company_id}
+        if service_id is not None:
+            data["serviceId"] = service_id
+        response = self.__post("/api/employees", data)
+        if response.status_code == 200:
+            employees = []
+            for employee in response.json()["employees"]:
+                employees.append(EmployeeResponse(
+                    employee["email"],
+                    employee["first_name"],
+                    employee["last_name"]
+                ))
+            return employees
+        return HTMLError(response.reason, response.status_code)
 
-    async def get_all_employees(self, company_id, service_id=None):
-        try:
-            assert isinstance(company_id, int)
-            path = "/api/employees"
-            data = {"companyId": company_id}
-            if service_id is not None:
-                data["serviceId"] = service_id
-            response = await self.__post(path, data)
-            if response.status == 200:
-                employees = []
-                json_data = await response.json()
-                for employee in json_data["employees"]:
-                    employees.append(EmployeeResponse(
-                        employee["email"],
-                        employee["first_name"],
-                        employee["last_name"]
-                    ))
-                return employees
-            return HTMLError(response.reason, response.status)
-        except Exception as e:
-            return HTMLError("Error", 500)
+        # List all services of specific company.
 
-    async def get_all_services(self, company_id):
-        try:
-            assert isinstance(company_id, int)
-            path = "/api/services"
-            params = {"companyId": company_id}
-            response = await self.__post(path, params)
-            if response.status == 200:
-                services = []
-                json_data = await response.json()
-                for service in json_data["services"]:
-                    services.append(ServiceResponse(
-                        service["id"],
-                        service["name"]
-                    ))
-                return services
-            return HTMLError(response.reason, response.status)
-        except Exception as e:
-            return HTMLError("Error", 500)
+    # Required query parameter: companyId: int
+    def get_all_services(self, company_id):
+        response = self.__post("/api/services", params={"companyId": company_id})
+        if response.status_code == 200:
+            services = []
+            for service in response.json()["services"]:
+                services.append(ServiceResponse(
+                    service["id"],
+                    service["name"]
+                ))
+            return services
+        return HTMLError(response.reason, response.status_code)
 
-    async def create_campaign(self, campaign_name, service_id, email_template):
-        path = "/ai/launch_campaign"
-        params = {
-            "campaignName": campaign_name,
-            "serviceId": service_id,
-            "emailTemplate": email_template
-        }
-        response = await self.__post(path, params)
-        if response.status == 200:
+    # Create a new campaign.
+    def create_campaign(self, campaign_name, service_id, email_template):
+        response = self.__post("/ai/launch_campaign", params={"campaignName": campaign_name, "serviceId": service_id,
+                                                              "emailTemplate": email_template})
+        if response.status_code == 200:
             return "Ok"
-        return HTMLError(response.reason, response.status)
+        return HTMLError(response.reason, response.status_code)
+
+    def get_all_companies(self):
+        try:
+            path = "/api/companies"
+            response = self.__post(path)
+            if response.status_code == 200:
+                companies = []
+                json_data = response.json()
+                for service in json_data:
+                    companies.append(Company(
+                        int(service["companyId"]),
+                        service["companyName"]
+                    ))
+                return companies
+            return HTMLError(response.reason, response.status_code)
+        except Exception as e:
+            return HTMLError("Error", 500)
