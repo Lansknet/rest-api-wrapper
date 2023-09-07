@@ -40,6 +40,27 @@ class HTMLError:
     status_code: int
 
 
+@dataclass
+class EmailStatus:
+    id: str
+    first_name: str
+    last_name: str
+    email: str
+    position: str
+    ip: str
+    latitude: int
+    longitude: int
+    status: str
+
+
+@dataclass
+class CampaignTimeline:
+    email: str = ""
+    time: datetime = None
+    message: str = ""
+    details: str = ""
+
+
 class LansknetAPI:
     def __init__(self, base_url, username):
         self.base_url = base_url
@@ -160,6 +181,30 @@ class LansknetAPI:
                         service["companyName"]
                     ))
                 return companies
+            return HTMLError(response.reason, response.status_code)
+        except Exception as e:
+            return HTMLError("Error", 500)
+
+    def get_campaign_info(self, campaign_name):
+        try:
+            path = "/ai/get_campaign_info"
+            response = self.__post(path, params={"campaignName": campaign_name})
+            if response.status_code == 200:
+                json_data = response.json()
+                res = []
+                for campaign_status in json_data:
+                    res.append(EmailStatus(
+                        campaign_status["id"],
+                        campaign_status["first_name"],
+                        campaign_status["last_name"],
+                        campaign_status["email"],
+                        campaign_status["position"],
+                        campaign_status["ip"],
+                        campaign_status["latitude"],
+                        campaign_status["longitude"],
+                        campaign_status["status"],
+                    ))
+                return res
             return HTMLError(response.reason, response.status_code)
         except Exception as e:
             return HTMLError("Error", 500)
