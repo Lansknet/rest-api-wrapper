@@ -75,9 +75,11 @@ class LansknetAPI:
     def __get_jwt_token(self):
         auth = self.username + ":sssss"
         auth = base64.b64encode(auth.encode("ascii"))
-        response = self.__post("/api/login", None, {"Authorization": "Basic " + auth.decode("ascii")})
+        response = self.__post(
+            "/api/login", None, {"Authorization": "Basic " + auth.decode("ascii")})
         if response.status_code == 200:
-            b64 = base64.b64encode(str(response.json()["token"]).encode("ascii") + b":")
+            b64 = base64.b64encode(
+                str(response.json()["token"]).encode("ascii") + b":")
             return "Basic " + b64.decode("ascii")
         return {}
 
@@ -98,7 +100,8 @@ class LansknetAPI:
             for campaign in response.json()["campaigns"]:
                 campaigns.append(CampaignResponse(
                     int(campaign["clicked"]),
-                    datetime.strptime(campaign["created_date"][:-1], "%Y-%m-%dT%H:%M:%S"),
+                    datetime.strptime(
+                        campaign["created_date"][:-1], "%Y-%m-%dT%H:%M:%S"),
                     campaign["name"],
                     int(campaign["opened"]),
                     int(campaign["sent"]),
@@ -111,13 +114,15 @@ class LansknetAPI:
     # List all campaigns of specific company and service within.
     # Required query parameter: companyId: id, serviceId: int
     def get_all_service_campaigns(self, company_id, service_id):
-        response = self.__post("/api/campaign/service/" + str(service_id), params={"companyId": company_id})
+        response = self.__post("/api/campaign/service/" +
+                               str(service_id), params={"companyId": company_id})
         if response.status_code == 200:
             campaigns = []
             for campaign in response.json()["campaigns"]:
                 campaigns.append(CampaignResponse(
                     int(campaign["clicked"]),
-                    datetime.strptime(campaign["created_date"][:-1], "%Y-%m-%dT%H:%M:%S"),
+                    datetime.strptime(
+                        campaign["created_date"][:-1], "%Y-%m-%dT%H:%M:%S"),
                     campaign["name"],
                     int(campaign["opened"]),
                     int(campaign["sent"]),
@@ -149,7 +154,8 @@ class LansknetAPI:
 
     # Required query parameter: companyId: int
     def get_all_services(self, company_id):
-        response = self.__post("/api/services", params={"companyId": company_id})
+        response = self.__post(
+            "/api/services", params={"companyId": company_id})
         if response.status_code == 200:
             services = []
             for service in response.json()["services"]:
@@ -188,7 +194,8 @@ class LansknetAPI:
     def get_campaign_info(self, campaign_name):
         try:
             path = "/ai/get_campaign_info"
-            response = self.__post(path, params={"campaignName": campaign_name})
+            response = self.__post(
+                path, params={"campaignName": campaign_name})
             if response.status_code == 200:
                 json_data = response.json()
                 res = []
