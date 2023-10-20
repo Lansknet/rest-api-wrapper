@@ -10,5 +10,5 @@ authors = [{ name = "Arthur Vasseur", email = "arthur.vasseur@epitech.eu" }]
 dependencies = ["requests", "httpx"]
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
