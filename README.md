@@ -1,3 +1,4 @@
+![Lansknet Wrapper API](doc/banner.png)
 # Lansknet API Wrapper
 
 This is a wrapper for the Lansknet API. It is written in Python and is designed to be used with the [Lansknet API](https://api-lansknet.me).
