@@ -1,5 +1,5 @@
 import unittest
-from LansknetAPI import LansknetAPI
+from LansknetAPI import Company, EmailStatus, LansknetAPI
 from LansknetAPI import CampaignResponse
 from LansknetAPI import ServiceResponse
 from LansknetAPI import EmployeeResponse
