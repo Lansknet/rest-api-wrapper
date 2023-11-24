@@ -78,6 +78,7 @@ class LansknetAPI:
         response = self.__post("/api/login", None, {"Authorization": "Basic " + auth.decode("ascii")})
         if response.status_code == 200:
             b64 = base64.b64encode(str(response.json()["token"]).encode("ascii") + b":")
+            self.is_logged_in = True
             return "Basic " + b64.decode("ascii")
         return {}
 
